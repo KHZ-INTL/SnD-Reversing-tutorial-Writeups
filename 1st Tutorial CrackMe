@@ -1,0 +1,26 @@
+
+This is 1 out of many ways to defeat the licensing check. I prefer this method as it does not require any patching, which reduces the possibility of destablising the program.
+The Licensing algorithm checks the Keyfile.dat for a License Key. It is possible to pass the scheme as long as the License key meets the following conditions: 
+1: At least 16 byte long. 
+2: The first 8 bytes should not be 0s 
+3: Should contain at least 8 "G"s (47h) before any 0s
+
+The Algorithm is something like:
+
+ESI = 0
+EBX = 0
+
+For i in licenseKey:
+	if i == 0:
+		if ESI < 8:
+			jmp [Invalid LicenseKey]
+		Elseif ESI >=8:
+			jmp [Valid License]
+	if i == 47h:
+		ESI ++
+  else:
+		EBX ++
+
+
+The following License key would pass the check:
+GGGGGGGGGG000000
