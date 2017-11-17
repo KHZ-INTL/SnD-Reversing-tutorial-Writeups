@@ -1,0 +1,147 @@
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+TLDR:
+	The Licensing algorithm checks the Keyfile.dat for a License Key. It is possible to pass the scheme as long as the License key meets the following conditions: 
+	1: The first 8 bytes should not be 0s
+	2: should contain at least 8 "G"s (47h) before any 0s
+	3: At least 16 byte long.
+	The following License key would pass the check: GGGGGGGGGG000000
+
+	The Algorithm is something like:
+		ESI = 0
+		EBX = 0
+		For i in licenseKey:
+			if i == 0:
+				if ESI < 8:
+					jmp [Invalid LicenseKey]
+				Elseif ESI >=8:
+					jmp [Valid License]
+			if i == 47h:
+				ESI ++
+		  else:
+				EBX ++
+
+
+
+LICENSING ALGORITHM
+
+	[Mnemonics]										[My short explanation/comments] 
+
+	...
+	XOR EBX, EBX									; When the two parameters are the same registers (EBX, EBX) this clears the register 
+	...
+
+@L00000001:
+	MOV AL,BYTE PTR DS:[EBX+40211A] 				; Get 1 byte data (1 letter) from [EBX + Mem.Location of Licensekey] 
+	CMP AL,0 										; if letter equals to "0" then:
+	JE SHORT @L00000003 							; Jump to @L00000003 or 04010D3 when debugging
+	CMP AL,47 										; Else: check if letter equals to 47h "G"
+	JNE SHORT @L00000002 							; if letter does not equal to 47h "G" then increase EBX
+	INC ESI 										; Else increase ESI by 1
+
+@L00000002:
+	INC EBX 										; Increase EBX by 1
+	JMP SHORT @L00000001 							; Repeat loop for every letter in licenseKey
+
+@L00000003:
+	CMP ESI,8 										; Check if ESI is equal to 8 or 8 x "G"s
+	JL SHORT $$10F7 								; if ESI equals to 8x "G"s then jump to Valid License message
+
+
+In Depth Explanation for newbies like me 
+
+
+XOR EBX, EBX	-						Exclusive OR: Destination, Source
+											To understand, look at the following example:
+											A:				10110110 
+											B:				10011101
+											------------------------
+											result:			00101011 
+
+											When the the corresponding bits from A and B (right to left) both 1, the resulting bit would be 0. Else when out of A or B when a bit is 1 the resulting bit would be 1. 
+
+												i.	When the same data is XORed the result would be all 0s, or simple it would clear, such as XOR EBX, EBX
+
+
+@L00000001:
+	MOV AL,BYTE PTR DS:[EBX+40211A]
+		i:			MOV -			 		Move: Destination, Source 	- Copies data from Source to Destination
+		ii:			AL  -	 		 		Refers to the Lower 8 bits of AX: 
+									 		Every "=" equals to 4 bits
+
+											 ======== : EAX (32 bits) - The whole EAX register
+											 	 ==== : AX  (16 bits) - The Lower 16 bits of EAX register
+											 	 ==   : AH  (8  bits)  - The Higher 8 bits of AX  register
+											 	   == : AL  (8  bits)  - The Lower  8 bits of AX  register
+		
+		iii:		BYTE  -		 			Specifies the length of data to MOV(copy) to AL:
+									 		Some data sizes:
+											 	A Bit:				 can hold 1 or 0 as a value
+											 	1 Byte:				 Made up of 8 bits - [ |||||||| ]
+											 	1 ASCII (1 letter):  Made up of 1 Byte
+											 	A Word: 			 Made up of 2 Bytes (16 bits) - { [ |||||||| ] [ |||||||| ] }
+											 	Double Word (DWORD): Made up of 2 Words (32 bits) - { [ |||||||| ] [ |||||||| ] [ |||||||| ] [ |||||||| ] }
+		
+		iiii:		DS:[EBX+40211A]			DS: Data Segment of application in memory - Think of this as a page in a book				 	
+					[EBX + 40211A] 			The location in the segment to read 1 byte (1 ASCII) from - Think of this as the lines within the page - EBX is used as an offset within 							a line.
+
+											In memory our License Key: Let say our Keyfile.dat had the following License key:	"GGGGGGGGGG000000"
+											40211A: 47h(h=hex) which equals to "G"
+											40211B: 47h
+											...
+											40212B: 30h
+
+												i.		40211A is starting location at which the License key is stored in the memory
+												ii. 	Calculating the memory location of [EBX + 40211A] would be [0 (The value of EBX Register) + 40211A] = 40211A
+												iii.	When EBX is increased during the licensing algorithm, the location in memory at which 1 byte is copied will be different
+														i.e: [EBX(=11)+ 40211A]= 40212B == 30h or "0" ASCII.
+
+	CMP AL, 0								CMP: Source 1, Source 2 -	Compare Source 1 and Source 2 and sets appropriate flag
+												i.	from last operation(MOV), the first byte (letter) of our License Key was copied into AL and  it is being compared to 0
+												ii. if both operand are the same the zero flag is set to 1 or on.
+
+	JE SHORT @L00000003						JE SHORT: Memory Address -	Jumps near at specified memory location if the previous operation (CMP) resulted the zero flag to 1.
+
+	CMP AL,47								Compares: AL with, 47h or "G" in ASCII
+
+	JNE SHORT @L00000002					JNE SHORT: Memory Location -	Jumps near at specified memory location if the previous operation (CMP) resulted not equal or 																						the zero flag was set to 0.
+																				i. 	This jumps to : increase EBX Memory Address
+																				ii. If the AL did equal to 47 it would continue to Increasing ESI
+										
+	INC ESI 								INC: Register - Increases the register (ESI) by 1
+
+	INC EBX									INC: Register - Increases the register (EBX) by 1
+												i. When EBX is increased the next letter of our License Key can be copied to AL (MOV), remember: [EBX + 40211A]
+
+	JMP SHORT @L00000001					JMP SHORT: Memory Address -	Unconditional jump at specified memory location.
+												i. This jumps to top of loop
+
+	CMP ESI,8 								CMP: Source 1, Source 2 -	Compare ESI with 8h (8 in decimal) and sets appropriate flags
+												i. Checks if ESI has the value 8, remember that ESI is incremented during the loop if there was 47("G") in AL
+
+	JL SHORT $$10F7							JL SHORT: Memory Address - Jump near at Memory Address ($$10F7) if the last operation resulted in Zero flag = 1 or S flag= 1
+												i. This jumps to Valid License Message.
+
+
+
+
+											
+											
+
+
+
+												
+
+
+
+
+
+
+
+
+
+
+
+
