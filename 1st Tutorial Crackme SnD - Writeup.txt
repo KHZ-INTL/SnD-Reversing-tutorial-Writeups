@@ -106,7 +106,7 @@ XOR EBX, EBX	-						Exclusive OR: Destination, Source
 
 	CMP AL,47								Compares: AL with, 47h or "G" in ASCII
 
-	JNE SHORT @L00000002					JNE SHORT: Memory Location -	Jumps near at specified memory location if the previous operation (CMP) resulted not equal or 																						the zero flag was set to 0.
+	JNE SHORT @L00000002					JNE SHORT: Memory Location -	Jumps near at specified memory location if the 																					previous operation (CMP) resulted not equal or 	the zero flag was set to 0.
 																				i. 	This jumps to : increase EBX Memory Address
 																				ii. If the AL did equal to 47 it would continue to Increasing ESI
 										
@@ -118,7 +118,7 @@ XOR EBX, EBX	-						Exclusive OR: Destination, Source
 	JMP SHORT @L00000001					JMP SHORT: Memory Address -	Unconditional jump at specified memory location.
 												i. This jumps to top of loop
 
-	CMP ESI,8 								CMP: Source 1, Source 2 -	Compare ESI with 8h (8 in decimal) and sets appropriate flags
+	CMP ESI,8 								CMP: Source 1, Source 2 -	Compare ESI with 8h (8 in decimal) and sets appropriate 																		flags
 												i. Checks if ESI has the value 8, remember that ESI is incremented during the loop if there was 47("G") in AL
 
 	JL SHORT $$10F7							JL SHORT: Memory Address - Jump near at Memory Address ($$10F7) if the last operation resulted in Zero flag = 1 or S flag= 1
