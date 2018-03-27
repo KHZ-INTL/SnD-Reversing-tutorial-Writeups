@@ -1,6 +1,6 @@
 
 ## UPDATE
-The writeup/s published, available on the blog
+The writeup/s are published, available on the blog
 https://khz-intl.github.io/
 
 ## SnD-Reversing-tutorial-Writeups
